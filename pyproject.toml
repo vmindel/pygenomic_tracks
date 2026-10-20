@@ -8,6 +8,8 @@ version = "0.1.0"
 description = "Genome-browser-style tracks from pandas DataFrames, drawn on matplotlib axes"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Vova Mindel", email = "vovamindel@gmail.com" }]
 keywords = ["bioinformatics", "genomics", "genome browser", "tracks", "matplotlib", "misha", "ChEC-seq", "ChIP-seq"]
 classifiers = [

@@ -63,3 +63,7 @@ pytest                              # includes executing every tutorial
 python docs/run_docs.py --update    # refresh tutorial output and figures
 mkdocs serve
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
