@@ -36,7 +36,12 @@ _memory: Dict[Tuple[str, float], pd.DataFrame] = {}
 
 
 def cache_dir() -> Path:
-    """``$PYGT_CACHE_DIR``, else ``$XDG_CACHE_HOME/pygenomic_tracks``, else ``~/.cache/pygenomic_tracks``."""
+    """Directory holding downloaded annotations.
+
+    ``$PYGT_CACHE_DIR`` if set, else ``$XDG_CACHE_HOME/pygenomic_tracks``,
+    else ``~/.cache/pygenomic_tracks``. On a cluster, point
+    ``PYGT_CACHE_DIR`` at a shared group directory to download once per lab.
+    """
     if os.environ.get("PYGT_CACHE_DIR"):
         return Path(os.environ["PYGT_CACHE_DIR"]).expanduser()
     base = os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache"
@@ -93,10 +98,33 @@ def _cached_track(genome: str, tracks: Sequence[str]) -> Optional[str]:
 
 
 def download(genome: str, track: Optional[str] = None, force: bool = False) -> Path:
-    """Fetch and prepare the annotation for ``genome``; returns the prepared table's path.
+    """Download and prepare the annotation of a UCSC assembly.
 
-    ``track`` picks a UCSC gene track (e.g. "knownGene" for GENCODE on hg38);
-    by default the first of ``DEFAULT_TRACKS`` that UCSC provides is used.
+    Does nothing if the annotation is already cached (unless ``force``).
+
+    Parameters
+    ----------
+    genome : str
+        UCSC assembly name: ``"hg38"``, ``"mm10"``, ``"sacCer3"``, ...
+    track : str, optional
+        UCSC gene track, e.g. ``"knownGene"`` (GENCODE on hg38/mm39),
+        ``"ncbiRefSeq"``, ``"ensGene"``. By default the first of
+        ``ncbiRefSeq``, ``refGene``, ``ensGene``, ``knownGene`` that UCSC
+        provides for the assembly.
+    force : bool
+        Re-download and re-prepare.
+
+    Returns
+    -------
+    pathlib.Path
+        The prepared table in :func:`cache_dir`.
+
+    Raises
+    ------
+    FileNotFoundError
+        If UCSC has none of the tracks tried for ``genome``.
+    urllib.error.URLError
+        On network failure (no internet, proxy refusal).
     """
     tracks = (track,) if track else DEFAULT_TRACKS
     found = None if force else _cached_track(genome, tracks)
@@ -141,10 +169,30 @@ def annotation(
     track: Optional[str] = None,
     download_missing: bool = True,
 ) -> pd.DataFrame:
-    """Exon/CDS table for :func:`genes`, from a genome name, a GTF path or a DataFrame.
+    """Gene annotation as an exon/CDS DataFrame, ready for :func:`genes`.
 
-    Results are kept in memory, so repeated calls within a session are free.
-    Do not modify the returned DataFrame in place; it is shared.
+    Parameters
+    ----------
+    source : str, path or pandas.DataFrame
+        A UCSC assembly name (downloaded and cached on first use), a GTF
+        path (parsed, kept in memory), or a DataFrame (returned unchanged).
+    track : str, optional
+        UCSC gene track; see :func:`download`.
+    download_missing : bool
+        If ``False``, raise instead of downloading a genome that is not
+        cached. Use this on compute nodes without internet.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``chrom, start, end, strand, feature, transcript_id, gene_id,
+        gene_name``; 0-based, half-open. ``gene_name`` falls back to
+        ``gene_id`` where the GTF has none.
+
+    Notes
+    -----
+    Tables are kept in memory, so repeated calls are free. The same object is
+    returned each time: copy it before modifying it.
     """
     if isinstance(source, pd.DataFrame):
         return source
@@ -179,7 +227,29 @@ def gene_region(
     flank: int = 0,
     track: Optional[str] = None,
 ) -> Region:
-    """Region spanning all transcripts of ``gene`` (gene_name or gene_id), plus ``flank`` bp."""
+    """Region spanning all transcripts of a gene, plus flanks.
+
+    Parameters
+    ----------
+    source : str, path or pandas.DataFrame
+        As for :func:`annotation`.
+    gene : str
+        Gene name or gene id. Exact match first, then case-insensitive on
+        gene names.
+    flank : int
+        bp added on each side.
+    track : str, optional
+        UCSC gene track; see :func:`download`.
+
+    Returns
+    -------
+    Region
+
+    Raises
+    ------
+    KeyError
+        If the gene is not found.
+    """
     df = annotation(source, track=track)
     hits = df[(df["gene_name"] == gene) | (df["gene_id"] == gene)]
     if hits.empty:
@@ -195,7 +265,7 @@ def gene_region(
 
 
 def cached() -> pd.DataFrame:
-    """Genomes and tracks currently in the cache."""
+    """Table of cached annotations: ``genome, track, prepared, size_mb``."""
     rows = []
     root = cache_dir()
     for p in sorted(root.glob("*/*.gtf.gz")):

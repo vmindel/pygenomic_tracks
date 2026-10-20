@@ -18,6 +18,21 @@ _REGION_RE = re.compile(r"^(?P<chrom>[^:\s]+):(?P<start>\d+)-(?P<end>\d+)$")
 
 @dataclass(frozen=True)
 class Region:
+    """A genomic window, 0-based and half-open.
+
+    Parameters
+    ----------
+    chrom : str
+    start : int
+    end : int
+        Must be greater than ``start``.
+
+    Examples
+    --------
+    >>> Region("chr2", 1_200_000, 1_350_000).length
+    150000
+    """
+
     chrom: str
     start: int
     end: int
@@ -40,7 +55,20 @@ RegionLike = Union[Region, str, Sequence]
 
 
 def as_region(region: RegionLike) -> Region:
-    """Coerce ``"chr2:1,200,000-1,350,000"``, ``("chr2", 1200000, 1350000)`` or a Region."""
+    """Coerce a region specification to :class:`Region`.
+
+    Parameters
+    ----------
+    region : Region, str or tuple
+        ``"chr2:1,200,000-1,350,000"`` (commas and underscores ignored), a
+        ``(chrom, start, end)`` tuple, or a :class:`Region`. Strings are read
+        as 0-based like BED; a coordinate copied from the UCSC browser bar is
+        1-based and so 1 bp off, which is invisible at track scale.
+
+    Returns
+    -------
+    Region
+    """
     if isinstance(region, Region):
         return region
     if isinstance(region, str):
@@ -76,7 +104,22 @@ def chrom_mask(chroms: pd.Series, chrom: str) -> pd.Series:
 
 
 def select(df: pd.DataFrame, region: Region, cols: Sequence[str] = DEFAULT_COLS) -> pd.DataFrame:
-    """Rows of ``df`` overlapping ``region``, sorted by start."""
+    """Rows of ``df`` overlapping ``region``, sorted by start.
+
+    If no row is on ``region.chrom``, the name with the ``chr`` prefix
+    toggled is tried (``chr2`` and ``2``).
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+    region : Region
+    cols : tuple of str
+        Names of the chrom, start and end columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
     c, s, e = cols
     check_columns(df, cols)
     mask = chrom_mask(df[c], region.chrom) & (df[e] > region.start) & (df[s] < region.end)

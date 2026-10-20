@@ -33,17 +33,52 @@ def genes(
     fontsize: float = 7,
     label: Optional[str] = None,
 ):
-    """Draw transcript models: thin intron line, exons, thick CDS, strand arrowheads.
+    """Draw transcript models: intron line, exons, thicker CDS, strand arrowheads, names.
 
-    ``df`` is a genome name ("hg38", downloaded and cached on first use), a GTF
-    path, or a DataFrame with one row per feature (as from :func:`read_gtf` or
-    :func:`annotation`): ``feature`` is "exon" or "CDS" (other values are
-    ignored) and ``transcript`` groups rows into transcripts. Transcripts with
-    CDS rows draw non-coding exon parts at ``utr_ratio`` of full height;
-    transcripts without CDS draw exons at full height.
+    Parameters
+    ----------
+    df : pandas.DataFrame, str or path
+        A UCSC assembly name (``"hg38"``; downloaded and cached on first use,
+        see :func:`annotation`), a GTF path, or a DataFrame with one row per
+        exon/CDS such as :func:`read_gtf` returns.
+    ax : matplotlib.axes.Axes
+        Axes to draw on.
+    region : Region, str or tuple
+        The window to draw. Transcripts crossing its edges are drawn clipped.
+    cols : tuple of str
+        Names of the chrom, start and end columns.
+    feature : str
+        Column with the feature type. Rows other than ``"exon"`` and
+        ``"CDS"`` are ignored.
+    transcript : str
+        Column grouping rows into transcripts.
+    name : str or None
+        Column with the gene name shown under each transcript; ``None``
+        shows transcript ids.
+    strand : str or None
+        Strand column for arrowheads; ``None`` draws none.
+    transcripts : {"all", "longest"}
+        ``"longest"`` keeps one transcript per gene name (longest span).
+    color : matplotlib colour
+        Colour of the whole model.
+    height : float
+        Height of coding exons as a fraction of a row.
+    utr_ratio : float
+        Height of non-coding parts of coding transcripts relative to
+        ``height``. Transcripts without CDS rows are drawn at full height.
+    show_names : bool
+        Print names under transcripts.
+    pack : bool
+        Stack overlapping transcripts into rows.
+    fontsize : float
+        Size of the names.
+    label : str, optional
+        Track label printed to the left of the axes.
 
-    transcripts:
-        "all", or "longest" to keep one transcript per ``name`` (longest span).
+    Returns
+    -------
+    matplotlib.axes.Axes
+        ``ax``, for chaining.
     """
     df = annotation(df)
     region = as_region(region)

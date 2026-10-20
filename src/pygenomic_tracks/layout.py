@@ -18,7 +18,18 @@ def _unit(length: int) -> Tuple[str, float]:
 
 
 def format_genomic_axis(ax, region: RegionLike, xlabel: bool = True) -> None:
-    """Set x-limits to the region and label ticks in bp/kb/Mb."""
+    """Set the x-limits to ``region`` and label ticks in bp, kb or Mb.
+
+    Track functions call this themselves; use it directly for axes you draw
+    on with plain matplotlib.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+    region : Region, str or tuple
+    xlabel : bool
+        Also set the axis label, e.g. ``"chr2 (kb)"``.
+    """
     region = as_region(region)
     unit, scale = _unit(region.length)
     ax.set_xlim(region.start, region.end)
@@ -56,9 +67,26 @@ def figure(
     track_height: float = 0.9,
     hspace: float = 0.15,
 ) -> Tuple[plt.Figure, List]:
-    """Stacked track axes sharing a genomic x-axis.
+    """Create stacked track axes sharing one genomic x-axis.
 
-    ``heights`` is either the number of tracks or their relative heights.
+    Parameters
+    ----------
+    region : Region, str or tuple
+        The window; sets the x-limits and the axis label of the bottom track.
+    heights : int or sequence of float
+        Number of tracks, or their relative heights.
+    width : float
+        Figure width in inches.
+    track_height : float
+        Inches per unit of ``heights``.
+    hspace : float
+        Vertical space between tracks, as a fraction of the mean track height.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+    axes : list of matplotlib.axes.Axes
+        One per track, top to bottom.
     """
     region = as_region(region)
     if isinstance(heights, int):

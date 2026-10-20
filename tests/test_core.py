@@ -197,3 +197,23 @@ def test_figure_shares_x():
     assert axes[0].get_xlim() == (1_000_000, 3_500_000)
     assert axes[-1].get_xlabel() == "chr1 (Mb)"
     plt.close(fig)
+
+
+def test_signal_overlay_shares_range(ax):
+    region = pygt.example_region()
+    pygt.signal(pygt.example_signal("control"), ax, region, name="ctrl")
+    low = ax.get_ylim()[1]
+    pygt.signal(pygt.example_signal("chec"), ax, region, name="chec")
+    assert ax.get_ylim()[1] > low
+    pygt.signal(pygt.example_signal("control"), ax, region)
+    assert ax.get_ylim()[1] > low  # a smaller third series does not shrink the range
+    assert len([t for t in ax.texts if t.get_gid() == "pygt-range"]) == 1
+    assert [t.get_text() for t in ax.get_legend().get_texts()] == ["ctrl", "chec"]
+
+
+def test_signal_after_clear_resets_range(ax):
+    region = pygt.example_region()
+    pygt.signal(pygt.example_signal("chec"), ax, region)
+    ax.clear()
+    pygt.signal(pygt.example_signal("control"), ax, region)
+    assert ax.get_ylim()[1] < 20

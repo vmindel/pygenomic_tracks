@@ -17,7 +17,25 @@ GTF_COLUMNS = ["chrom", "source", "feature", "start", "end", "score", "strand", 
 
 
 def read_bed(path, names: Optional[Sequence[str]] = None, **kwargs) -> pd.DataFrame:
-    """Read a BED/bedGraph-like file. Columns beyond ``names`` get BED names, then ``colN``."""
+    """Read a BED or bedGraph-like file into a DataFrame.
+
+    Parameters
+    ----------
+    path : str or path
+        Tab-separated file; gzip is detected from the extension. Lines
+        starting with ``#`` are skipped.
+    names : sequence of str, optional
+        Column names. By default the standard BED names are used for the
+        first 12 columns and ``colN`` after that, so a bedGraph gets
+        ``chrom, start, end, name``; pass ``names=["chrom", "start", "end",
+        "signal"]`` for a signal track.
+    **kwargs
+        Passed to :func:`pandas.read_csv`.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
     df = pd.read_csv(path, sep="\t", header=None, comment="#", dtype={0: str}, **kwargs)
     if names is None:
         names = BED_COLUMNS[: df.shape[1]] + [f"col{i}" for i in range(12, df.shape[1])]
@@ -32,9 +50,25 @@ def read_gtf(
 ) -> pd.DataFrame:
     """Read a GTF into one row per feature, ready for :func:`genes`.
 
-    Start is shifted to 0-based. Each name in ``attributes`` becomes a column
-    (NaN when absent). Cache the result (e.g. parquet) if you read a full
-    GENCODE annotation repeatedly.
+    Parameters
+    ----------
+    path : str or path
+        GTF file, optionally gzipped.
+    features : sequence of str or None
+        Feature types to keep; ``None`` keeps all.
+    attributes : sequence of str
+        Attributes extracted into columns (NaN where absent).
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``chrom, source, feature, start, end, score, strand, frame`` plus one
+        column per attribute. ``start`` is shifted to 0-based.
+
+    Notes
+    -----
+    Reading a full GENCODE GTF takes tens of seconds. For UCSC assemblies use
+    :func:`annotation`, which caches the prepared table.
     """
     df = pd.read_csv(path, sep="\t", header=None, names=GTF_COLUMNS, comment="#",
                      dtype={"chrom": str})
@@ -47,7 +81,21 @@ def read_gtf(
 
 
 def from_bigwig(path, region: RegionLike, value: str = "signal") -> pd.DataFrame:
-    """Intervals of a bigWig within ``region`` as a DataFrame (needs pyBigWig)."""
+    """Read the intervals of a bigWig within ``region`` (requires pyBigWig).
+
+    Parameters
+    ----------
+    path : str or path
+        bigWig file or URL.
+    region : Region, str or tuple
+    value : str
+        Name of the value column.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``chrom, start, end, <value>``, ready for :func:`signal`.
+    """
     try:
         import pyBigWig
     except ImportError as err:

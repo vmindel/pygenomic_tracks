@@ -1,0 +1,79 @@
+site_name: pygenomic_tracks
+site_description: Genome-browser-style tracks from pandas DataFrames, drawn on matplotlib axes
+site_url: https://vmindel.github.io/pygenomic_tracks/
+repo_url: https://github.com/vmindel/pygenomic_tracks
+repo_name: vmindel/pygenomic_tracks
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Tutorials:
+      - Quick start: tutorials/quickstart.md
+      - Signal tracks: tutorials/signal.md
+      - Interval tracks: tutorials/intervals.md
+      - Genes and annotations: tutorials/genes.md
+      - Figure layout: tutorials/layout.md
+      - With pymisha: tutorials/pymisha.md
+  - Claude Code skill: claude-skill.md
+  - API reference:
+      - Tracks: api/tracks.md
+      - Layout: api/layout.md
+      - Annotations: api/annotations.md
+      - Reading files: api/io.md
+      - Regions: api/regions.md
+      - Example data: api/datasets.md
+      - Command line: api/cli.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_source: false
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            merge_init_into_class: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+exclude_docs: |
+  run_docs.py

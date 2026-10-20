@@ -33,23 +33,62 @@ def intervals(
     legend: bool = False,
     label: Optional[str] = None,
 ):
-    """Draw intervals as boxes, one colour by default.
+    """Draw a feature track of boxes: peaks, CREs, motif hits, any BED-like table.
 
-    color_by:
-        Optional column to colour by. Numeric columns (e.g. motif score) go
-        through a colormap (``palette`` = colormap name, ``vmin``/``vmax``);
-        anything else is treated as categories (``palette`` = dict, list of
-        colours or colormap name).
-    label_by:
-        Optional column whose values are printed under each feature.
-    strand:
-        Optional strand column ("+"/"-"); draws arrowheads on features wide
-        enough to hold them.
-    pack:
-        Stack overlapping features into rows; False draws everything on one row.
-    min_width_px:
-        Features narrower than this many pixels are widened so that short
-        features (motif hits in a 1 Mb window) stay visible.
+    Everything is drawn in one colour by default; colouring, labels and
+    strand marks are opt-in.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Intervals with ``chrom``, ``start``, ``end``; other columns are used
+        only when named below. Rows outside ``region`` are ignored.
+    ax : matplotlib.axes.Axes
+        Axes to draw on.
+    region : Region, str or tuple
+        The window to draw, 0-based half-open.
+    cols : tuple of str
+        Names of the chrom, start and end columns.
+    color : matplotlib colour
+        Colour of every feature when ``color_by`` is not set, and of
+        categories missing from a ``palette`` dict.
+    color_by : str, optional
+        Column to colour by. A numeric column (e.g. motif score) is mapped
+        through a colormap; any other column is treated as categories.
+    palette : str, list or dict, optional
+        Numeric ``color_by``: a colormap name (default ``"viridis"``).
+        Categorical: a ``{category: colour}`` dict (keeps colours stable
+        across figures), a list of colours, or a colormap name (default
+        ``tab10``/``tab20``).
+    vmin, vmax : float, optional
+        Colormap limits for a numeric ``color_by``; default to the data range
+        in the window.
+    label_by : str, optional
+        Column printed under each feature. Packing leaves room for it.
+    strand : str, optional
+        Strand column (``"+"``/``"-"``). Draws arrowheads on features at
+        least 6 px wide; narrower features get none.
+    pack : bool
+        Stack overlapping features (and their labels) into rows. ``False``
+        draws everything on one row.
+    height : float
+        Box height as a fraction of a row.
+    min_width_px : float
+        Features narrower than this many pixels are widened around their
+        centre, so 10 bp motifs stay visible in a 1 Mb window.
+    edgecolor : matplotlib colour
+        Box outline; ``"none"`` by default.
+    fontsize : float
+        Size of feature labels and legend text.
+    legend : bool
+        Add a legend of the categories (categorical ``color_by`` only).
+    label : str, optional
+        Track label printed to the left of the axes.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        ``ax``, for chaining.
     """
     region = as_region(region)
     check_columns(df, [c for c in (color_by, label_by, strand) if c is not None])

@@ -5,6 +5,7 @@ from typing import Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from matplotlib.patches import StepPatch
 from matplotlib.ticker import MaxNLocator
 
 from ._coords import DEFAULT_COLS, Region, RegionLike, as_region, check_columns, clipped, select
@@ -79,24 +80,67 @@ def signal(
     linewidth: float = 0.8,
     ylim: Union[float, Tuple[float, float], None] = None,
     range_label: bool = True,
+    name: Optional[str] = None,
     label: Optional[str] = None,
 ):
-    """Draw a signal track from interval rows with a numeric ``value`` column.
+    """Draw a quantitative signal track.
 
-    Intervals are drawn as steps over their true extent; gaps between
-    intervals are left empty rather than interpolated across.
+    Each row is drawn as a step over its real extent, so variable-width bins
+    are correct and gaps between rows, or NaN values, stay empty instead of
+    being interpolated across.
 
-    n_bins:
-        "auto" aggregates to roughly one bin per pixel of the axes when there
-        are more intervals than pixels. An int sets the bin count, None draws
-        every interval as is (overlapping intervals then raise).
-    agg:
-        "max" (default, keeps narrow peaks visible), "min" or "mean"
-        (overlap-weighted).
-    ylim:
-        (ymin, ymax), or a single ymax, to put several tracks on one scale.
-    range_label:
-        Replace the y-axis by an IGV-style "[min - max]" label.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Intervals with ``chrom``, ``start``, ``end`` and a numeric ``value``
+        column, e.g. ``pymisha.gextract`` output. Rows outside ``region`` are
+        ignored.
+    ax : matplotlib.axes.Axes
+        Axes to draw on.
+    region : Region, str or tuple
+        ``"chr2:1,200,000-1,350,000"``, ``("chr2", 1200000, 1350000)`` or a
+        :class:`Region`. 0-based, half-open.
+    value : str
+        Column holding the signal.
+    cols : tuple of str
+        Names of the chrom, start and end columns.
+    n_bins : "auto", int or None
+        ``"auto"`` aggregates to about one bin per pixel of ``ax`` when there
+        are more rows than pixels, or when rows overlap. An int fixes the bin
+        count. ``None`` draws every row as is and raises on overlapping rows.
+    agg : {"max", "min", "mean"}
+        Aggregation used when binning. ``"max"`` keeps narrow peaks visible;
+        ``"mean"`` is weighted by overlap length.
+    color, alpha : matplotlib colour and float
+        Fill (or line) colour and opacity.
+    fill : bool
+        Filled area (default) or outline only.
+    linewidth : float
+        Line width when ``fill=False``.
+    ylim : float or (float, float), optional
+        A single ``ymax`` or ``(ymin, ymax)``. Pass the same value to several
+        tracks to put them on one scale. By default the range is
+        ``[min(0, data), max(0, data)]`` over every signal already drawn on
+        ``ax``, so overlays share one scale and are not clipped.
+    range_label : bool
+        Hide the y-axis and print an IGV-style ``[min - max]`` label instead.
+    name : str, optional
+        Legend entry for this series; adds a legend to ``ax``. Useful when
+        overlaying several signals on one axes.
+    label : str, optional
+        Track label printed to the left of the axes.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        ``ax``, for chaining.
+
+    Raises
+    ------
+    ValueError
+        If ``agg`` is unknown, or rows overlap with ``n_bins=None``.
+    KeyError
+        If a required column is missing.
     """
     if agg not in _AGGS:
         raise ValueError(f"agg must be one of {_AGGS}, got {agg!r}")
@@ -124,10 +168,13 @@ def signal(
     if len(heights) and np.isfinite(heights).any():
         ax.stairs(
             heights, edges, baseline=0, fill=fill, color=color, alpha=alpha,
-            linewidth=0 if fill else linewidth,
+            linewidth=0 if fill else linewidth, label=name,
         )
         if ylim is None:
-            lo, hi = min(0.0, np.nanmin(heights)), max(0.0, np.nanmax(heights))
+            # Range over every step series on the axes, so overlays share one scale.
+            drawn = np.concatenate([p.get_data().values for p in ax.patches
+                                    if isinstance(p, StepPatch)])
+            lo, hi = min(0.0, np.nanmin(drawn)), max(0.0, np.nanmax(drawn))
         elif np.isscalar(ylim):
             lo, hi = 0.0, float(ylim)
         else:
@@ -140,8 +187,15 @@ def signal(
     if range_label:
         lo, hi = ax.get_ylim()
         hide_y(ax)
-        ax.text(0.005, 0.98, f"[{lo:.3g} - {hi:.3g}]", transform=ax.transAxes,
-                ha="left", va="top", fontsize=7)
+        text = f"[{lo:.3g} - {hi:.3g}]"
+        existing = [t for t in ax.texts if t.get_gid() == "pygt-range"]
+        if existing:
+            existing[0].set_text(text)
+        else:
+            ax.text(0.005, 0.98, text, transform=ax.transAxes, ha="left", va="top",
+                    fontsize=7, gid="pygt-range")
     else:
         ax.yaxis.set_major_locator(MaxNLocator(nbins=2))
+    if name is not None:
+        ax.legend(loc="upper right", frameon=False, fontsize=7)
     return ax

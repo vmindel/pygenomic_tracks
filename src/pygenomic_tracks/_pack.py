@@ -5,9 +5,21 @@ import numpy as np
 
 
 def pack_rows(starts, ends, gap: float = 0.0) -> np.ndarray:
-    """Greedy first-fit packing: each interval goes to the top-most row it fits in.
+    """Assign intervals to rows so that none overlap within a row.
 
-    Two intervals share a row only if they are separated by at least ``gap``.
+    Greedy first fit over intervals sorted by start: each goes to the top-most
+    row it fits in.
+
+    Parameters
+    ----------
+    starts, ends : array-like
+    gap : float
+        Minimum distance between neighbours in one row.
+
+    Returns
+    -------
+    numpy.ndarray of int
+        Row index per interval, in input order.
     """
     starts = np.asarray(starts, dtype=float)
     ends = np.asarray(ends, dtype=float)
