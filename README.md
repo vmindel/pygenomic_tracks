@@ -51,6 +51,35 @@ hits. It draws one colour by default; everything else is opt-in:
 (`read_gtf` returns one). It draws an intron line, exons, thicker CDS, strand
 arrowheads and gene names. `transcripts="longest"` keeps one transcript per gene.
 
+## Gene annotations
+
+Pass a UCSC assembly name wherever an annotation is expected. It is downloaded
+on first use, reduced to exon/CDS rows and cached:
+
+```python
+region = pygt.gene_region("mm10", "Myc", flank=50_000)   # Region from a gene name or id
+pygt.genes("mm10", ax, region, transcripts="longest")
+ann = pygt.annotation("hg38")                            # the DataFrame itself
+```
+
+Any UCSC assembly works (hg38, hg19, mm10, mm39, sacCer3, dm6, ce11, danRer11, ...).
+The GTF comes from `goldenPath/<genome>/bigZips/genes/`, trying `ncbiRefSeq`,
+`refGene`, `ensGene` and `knownGene` in that order; choose one explicitly with
+`track="knownGene"` (GENCODE on hg38/mm39). UCSC chromosome names (`chr1`,
+`chrI`) match misha databases built from UCSC sequences.
+
+The cache lives in `$PYGT_CACHE_DIR`, else `~/.cache/pygenomic_tracks`. LSF
+compute nodes often have no internet, so fill it from a login node:
+
+```bash
+pygt download hg38 mm10 sacCer3     # or: python -m pygenomic_tracks download ...
+pygt list
+```
+
+Then call `pygt.annotation("hg38", download_missing=False)` in jobs, so a
+missing genome fails at once rather than hanging on a download. Writes are
+atomic, so parallel jobs sharing the cache don't corrupt it.
+
 ## Conventions
 
 - Coordinates are 0-based, half-open. `read_gtf` shifts GTF starts by 1.

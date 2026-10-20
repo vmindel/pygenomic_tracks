@@ -6,6 +6,7 @@ with ``cols=``), which is what pymisha's ``gextract``/``gscreen`` return.
 """
 from ._coords import Region, as_region, select
 from ._pack import pack_rows
+from .annotations import annotation, cache_dir, cached, download, gene_region
 from .genes import genes
 from .intervals import intervals
 from .io import from_bigwig, read_bed, read_gtf
@@ -16,10 +17,15 @@ __version__ = "0.1.0"
 
 __all__ = [
     "Region",
+    "annotation",
     "as_region",
+    "cache_dir",
+    "cached",
+    "download",
     "figure",
     "format_genomic_axis",
     "from_bigwig",
+    "gene_region",
     "genes",
     "intervals",
     "pack_rows",

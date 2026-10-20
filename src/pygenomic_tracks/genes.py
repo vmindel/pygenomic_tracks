@@ -1,7 +1,8 @@
 """Gene model tracks from long-format (GTF-like) tables."""
 from __future__ import annotations
 
-from typing import Optional, Sequence
+import os
+from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -9,12 +10,13 @@ from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.patches import Rectangle
 
 from . import _features as F
+from .annotations import annotation
 from ._coords import DEFAULT_COLS, RegionLike, as_region, check_columns, chrom_mask
 from .layout import finish_track, hide_y
 
 
 def genes(
-    df: pd.DataFrame,
+    df: Union[pd.DataFrame, str, os.PathLike],
     ax,
     region: RegionLike,
     cols: Sequence[str] = DEFAULT_COLS,
@@ -33,15 +35,17 @@ def genes(
 ):
     """Draw transcript models: thin intron line, exons, thick CDS, strand arrowheads.
 
-    ``df`` has one row per feature (as from :func:`read_gtf`): ``feature`` is
-    "exon" or "CDS" (other values are ignored) and ``transcript`` groups rows
-    into transcripts. Transcripts with CDS rows draw non-coding exon parts at
-    ``utr_ratio`` of full height; transcripts without CDS draw exons at full
-    height.
+    ``df`` is a genome name ("hg38", downloaded and cached on first use), a GTF
+    path, or a DataFrame with one row per feature (as from :func:`read_gtf` or
+    :func:`annotation`): ``feature`` is "exon" or "CDS" (other values are
+    ignored) and ``transcript`` groups rows into transcripts. Transcripts with
+    CDS rows draw non-coding exon parts at ``utr_ratio`` of full height;
+    transcripts without CDS draw exons at full height.
 
     transcripts:
         "all", or "longest" to keep one transcript per ``name`` (longest span).
     """
+    df = annotation(df)
     region = as_region(region)
     c, s, e = cols
     needed = list(cols) + [feature, transcript]

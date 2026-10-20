@@ -18,6 +18,9 @@ dependencies = [
 bigwig = ["pyBigWig"]
 test = ["pytest"]
 
+[project.scripts]
+pygt = "pygenomic_tracks.__main__:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/pygenomic_tracks"]
 
