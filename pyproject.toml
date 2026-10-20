@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pygenomic-tracks"
+version = "0.1.0"
+description = "Genome-browser-style tracks from pandas DataFrames, drawn on matplotlib axes"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.21",
+    "pandas>=1.3",
+    "matplotlib>=3.5",
+]
+
+[project.optional-dependencies]
+bigwig = ["pyBigWig"]
+test = ["pytest"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pygenomic_tracks"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
