@@ -46,6 +46,10 @@ coordinates and overlaps. Run `python scripts/check_table.py --help`.
   x-axis. Tracks also work on any single `ax`.
 - `pygt.intervals` draws one colour unless `color_by=` is given. A numeric
   `color_by` uses a colormap, anything else is categorical.
+- `pygt.geometry` (`signal_steps`, `gene_models`, `feature_rows`, ...) returns
+  what a track would draw, as DataFrames and arrays, without drawing. Use it
+  only to inspect a track's content or to build another front-end; for
+  figures, call the track functions.
 - If a table has no rows on the region's chromosome, the name with the
   `chr` prefix toggled is tried (`chr2` and `2`). Anything else that does
   not match gives an empty track **without an error**.
