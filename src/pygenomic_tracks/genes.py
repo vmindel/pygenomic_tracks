@@ -10,8 +10,9 @@ from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.patches import Rectangle
 
 from . import _features as F
+from ._coords import DEFAULT_COLS, RegionLike, as_region
 from .annotations import annotation
-from ._coords import DEFAULT_COLS, RegionLike, as_region, check_columns, chrom_mask
+from .geometry import gene_models
 from .layout import finish_track, hide_y
 
 
@@ -82,26 +83,10 @@ def genes(
     """
     df = annotation(df)
     region = as_region(region)
-    c, s, e = cols
-    needed = list(cols) + [feature, transcript]
-    needed += [x for x in (name, strand) if x is not None]
-    check_columns(df, needed)
-    if transcripts not in ("all", "longest"):
-        raise ValueError(f"transcripts must be 'all' or 'longest', got {transcripts!r}")
-
-    parts = df.loc[chrom_mask(df[c], region.chrom) & df[feature].isin(["exon", "CDS"])]
-    span = parts.groupby(transcript, sort=False).agg(start=(s, "min"), end=(e, "max"))
-    span = span[(span["end"] > region.start) & (span["start"] < region.end)]
-    if name is not None:
-        span["name"] = parts.groupby(transcript, sort=False)[name].first().loc[span.index]
-    else:
-        span["name"] = span.index.astype(str)
-    if transcripts == "longest" and len(span):
-        span = span.assign(_len=span["end"] - span["start"])
-        span = span.sort_values("_len", ascending=False).groupby("name", sort=False).head(1)
-    span = span.sort_values("start", kind="stable")
-    if strand is not None:
-        span["strand"] = parts.groupby(transcript, sort=False)[strand].first().loc[span.index]
+    span, parts = gene_models(
+        df, region, cols=cols, feature=feature, transcript=transcript, name=name,
+        strand=strand, transcripts=transcripts,
+    )
 
     t_start = np.clip(span["start"].to_numpy(float), region.start, region.end)
     t_end = np.clip(span["end"].to_numpy(float), region.start, region.end)
@@ -119,11 +104,9 @@ def genes(
             F.draw_chevrons(ax, region, t_start, t_end, rows * pitch,
                             span["strand"].astype(str), color, size=3.0, zorder=1)
 
-        parts = parts[parts[transcript].isin(span.index)]
-        coding = set(parts.loc[parts[feature] == "CDS", transcript])
         boxes = []
-        for tid, fs, fe, ft in zip(parts[transcript], parts[s], parts[e], parts[feature]):
-            full = ft == "CDS" or tid not in coding
+        for tid, fs, fe, full in zip(parts["transcript"], parts["start"], parts["end"],
+                                     parts["full"]):
             h = height if full else height * utr_ratio
             boxes.append(Rectangle((fs, y_of[tid] - h / 2), fe - fs, h))
         ax.add_collection(PatchCollection(boxes, facecolors=color, edgecolors="none", zorder=2))

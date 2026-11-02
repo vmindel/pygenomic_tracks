@@ -7,14 +7,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 
 from ._coords import Region, RegionLike, as_region
+from .geometry import genomic_unit
 
-
-def _unit(length: int) -> Tuple[str, float]:
-    if length >= 2_000_000:
-        return "Mb", 1e6
-    if length >= 2_000:
-        return "kb", 1e3
-    return "bp", 1.0
+_unit = genomic_unit
 
 
 def format_genomic_axis(ax, region: RegionLike, xlabel: bool = True) -> None:

@@ -46,6 +46,7 @@ nav:
       - Regions: api/regions.md
       - Example data: api/datasets.md
       - Command line: api/cli.md
+      - Geometry (for other front-ends): api/geometry.md
 
 plugins:
   - search

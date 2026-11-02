@@ -4,6 +4,7 @@ Every track function has the shape ``fn(df, ax, region, **column_args)``.
 DataFrames need ``chrom``, ``start``, ``end`` (0-based, half-open; override
 with ``cols=``), which is what pymisha's ``gextract``/``gscreen`` return.
 """
+from . import geometry
 from ._coords import Region, as_region, select
 from ._pack import pack_rows
 from .annotations import annotation, cache_dir, cached, download, gene_region
@@ -21,7 +22,7 @@ from .io import from_bigwig, read_bed, read_gtf
 from .layout import figure, format_genomic_axis
 from .signal import signal
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Region",
@@ -41,6 +42,7 @@ __all__ = [
     "from_bigwig",
     "gene_region",
     "genes",
+    "geometry",
     "intervals",
     "pack_rows",
     "read_bed",
