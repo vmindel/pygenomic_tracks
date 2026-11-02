@@ -37,6 +37,10 @@ pygt.genes("mm10", axes[3], region, transcripts="longest")
   nodes.
 - **Light dependencies.** numpy, pandas, matplotlib. pyBigWig is optional.
 - **A [Claude Code skill](claude-skill.md)** ships with the package.
+- **Drawing kept separate from computing.** [`pygt.geometry`](api/geometry.md) works
+  out what a track contains (signal steps, gene parts, rows) without an `Axes`. The
+  tracks here are built on it, and other front-ends can reuse it so binning, packing
+  and annotation handling stay identical.
 
 ## Where next
 
@@ -49,6 +53,7 @@ pygt.genes("mm10", axes[3], region, transcripts="longest")
 | [Figure layout](tutorials/layout.md) | stacked tracks, highlights, panels, several loci, saving |
 | [With pymisha](tutorials/pymisha.md) | from track expressions to figures |
 | [API reference](api/tracks.md) | every public function |
+| [Geometry](api/geometry.md) | the drawing-free layer, for building other front-ends |
 
 Every tutorial code block with output is executed by the test suite. Its printed
 output is checked and its figures are regenerated from the code shown.

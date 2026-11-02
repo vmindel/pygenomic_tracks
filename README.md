@@ -32,6 +32,14 @@ pygt.genes("mm10", axes[3], region, transcripts="longest")
 | `pygt.intervals` | any BED-like table; one colour by default, opt-in `color_by` (categorical or numeric), `label_by`, `strand`; short features kept visible |
 | `pygt.genes` | transcript models from a DataFrame, a GTF path or a UCSC genome name (`"hg38"`, downloaded and cached on first use) |
 
+## Other front-ends
+
+`pygt.geometry` computes what a track contains (signal steps, gene parts, label-aware
+rows, axis units) without a matplotlib `Axes`; screen-dependent choices take the
+resolution as an argument. The tracks above are built on it. It is public API for
+packages that draw the same tracks another way, such as plotnine geoms. See the
+[geometry reference](https://vmindel.github.io/pygenomic_tracks/api/geometry/).
+
 ## Install
 
 ```bash

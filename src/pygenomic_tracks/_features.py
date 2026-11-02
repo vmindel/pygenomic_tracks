@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import Normalize
 
+from . import geometry as G
 from ._coords import Region
-from ._pack import pack_rows
 
 LABEL_PITCH = 1.8  # row pitch (in box-height units) when labels are drawn under features
 PLAIN_PITCH = 1.0
@@ -20,29 +20,18 @@ def bp_per_px(ax, region: Region) -> float:
 
 
 def text_width_bp(ax, region: Region, labels: Sequence[str], fontsize: float) -> np.ndarray:
-    # Approximate glyph width of 0.6 em; avoids a renderer round-trip per label.
-    char_px = 0.6 * fontsize * ax.figure.dpi / 72
-    n_chars = np.array([len(t) for t in labels], dtype=float)
-    return n_chars * char_px * bp_per_px(ax, region)
+    return G.text_width_bp(labels, fontsize, bp_per_px(ax, region), ax.figure.dpi)
 
 
-def widen(starts, ends, min_bp: float):
-    """Expand features narrower than ``min_bp`` symmetrically around their centre."""
-    narrow = (ends - starts) < min_bp
-    mid = (starts + ends) / 2
-    return np.where(narrow, mid - min_bp / 2, starts), np.where(narrow, mid + min_bp / 2, ends)
+widen = G.widen
 
 
 def assign_rows(ax, region, starts, ends, labels, fontsize, pack, gap_px=4.0):
     """Row index per feature, accounting for label width when labels are drawn."""
-    if not pack or len(starts) == 0:
-        return np.zeros(len(starts), dtype=int)
-    lo, hi = starts, ends
-    if labels is not None:
-        half = text_width_bp(ax, region, labels, fontsize) / 2
-        mid = (starts + ends) / 2
-        lo, hi = np.minimum(starts, mid - half), np.maximum(ends, mid + half)
-    return pack_rows(lo, hi, gap=gap_px * bp_per_px(ax, region))
+    return G.feature_rows(
+        starts, ends, bp_per_px(ax, region), labels=labels, fontsize=fontsize,
+        dpi=ax.figure.dpi, pack=pack, gap_px=gap_px,
+    )
 
 
 def set_row_limits(ax, n_rows: int, pitch: float, height: float, labelled: bool) -> None:
