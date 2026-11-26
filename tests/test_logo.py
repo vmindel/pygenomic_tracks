@@ -42,6 +42,17 @@ def test_logo_table_shapes_and_one_hot():
     assert per_pos[list("ACGT")].to_numpy().tolist() == [[0.5, 0, 0, 0], [0, -1.0, 0, 0]]
 
 
+def test_logo_table_row_vector_and_sequence_arrays():
+    scores = np.array([[0.5, -1.0, 0.2]])  # (1, L), e.g. one track extracted per bp
+    want = [[0.5, 0, 0, 0], [0, -1.0, 0, 0], [0, 0, 0, 0]]
+    for seq in ("ACn", np.array([list("ACN")]), list("acN"), b"ACN"):
+        t = pygt.logo_table(scores, "chr1", 0, sequence=seq)
+        assert t[list("ACGT")].to_numpy().tolist() == want
+    column = pygt.logo_table(scores.T, "chr1", 0, sequence="ACN")
+    assert column[list("ACGT")].to_numpy().tolist() == want
+    assert not np.signbit(t[list("ACGT")].to_numpy()[0, 1:]).any()
+
+
 def test_logo_table_rejects_bad_shapes():
     with pytest.raises(ValueError, match="sequence"):
         pygt.logo_table([1.0, 2.0], "chr1", 0)

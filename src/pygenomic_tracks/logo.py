@@ -64,14 +64,15 @@ def logo_table(
         ``(L, len(bases))`` scores per position and base, e.g. hypothetical
         contributions or ISM effects. A ``(len(bases), L)`` array, the usual
         channels-first layout of a PyTorch model, is transposed. A
-        one-dimensional ``(L,)`` array is one score per position and needs
-        ``sequence``.
+        one-dimensional ``(L,)`` array, or a ``(1, L)`` / ``(L, 1)`` one, is
+        one score per position and needs ``sequence``.
     chrom : str
     start : int
         0-based coordinate of the first position.
-    sequence : str, optional
-        Reference sequence of length ``L``. With a 2-D ``values`` the scores
-        are multiplied by its one-hot encoding, which keeps only the
+    sequence : str or array-like of str, optional
+        Reference sequence of length ``L``: a string, or an array of single
+        characters of any shape holding ``L`` of them. With a 2-D ``values``
+        the scores are multiplied by its one-hot encoding, which keeps only the
         reference base at each position (hypothetical to actual
         contributions). With a 1-D ``values`` each score is put on the
         reference base. Positions with other characters (``N``) get zeros.
@@ -91,23 +92,30 @@ def logo_table(
     """
     bases = list(bases)
     arr = np.asarray(values, dtype=float)
+    if arr.ndim == 2 and len(bases) not in arr.shape and 1 in arr.shape:
+        arr = arr.ravel()
     if arr.ndim == 2 and arr.shape[1] != len(bases) and arr.shape[0] == len(bases):
         arr = arr.T
     onehot = None
     if sequence is not None:
-        seq = np.array(list(sequence.upper()))
+        if isinstance(sequence, bytes):
+            sequence = sequence.decode()
+        if isinstance(sequence, str):
+            seq = np.array(list(sequence.upper()))
+        else:
+            seq = np.char.upper(np.asarray(sequence, dtype=str).ravel())
         onehot = (seq[:, None] == np.array(bases)[None, :]).astype(float)
     if arr.ndim == 1:
         if onehot is None:
             raise ValueError("one score per position needs sequence= to place it on a base")
         if len(arr) != len(onehot):
             raise ValueError(f"values has {len(arr)} positions, sequence {len(onehot)}")
-        arr = arr[:, None] * onehot
+        arr = arr[:, None] * onehot + 0.0  # + 0.0 turns -0.0 into 0.0
     elif arr.ndim == 2 and arr.shape[1] == len(bases):
         if onehot is not None:
             if len(onehot) != len(arr):
                 raise ValueError(f"values has {len(arr)} positions, sequence {len(onehot)}")
-            arr = arr * onehot
+            arr = arr * onehot + 0.0
     else:
         raise ValueError(
             f"values must be (L,), (L, {len(bases)}) or ({len(bases)}, L); got {arr.shape}"
