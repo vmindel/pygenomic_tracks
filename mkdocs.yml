@@ -34,6 +34,7 @@ nav:
       - Quick start: tutorials/quickstart.md
       - Signal tracks: tutorials/signal.md
       - Interval tracks: tutorials/intervals.md
+      - Sequence logos: tutorials/logo.md
       - Genes and annotations: tutorials/genes.md
       - Figure layout: tutorials/layout.md
       - With pymisha: tutorials/pymisha.md

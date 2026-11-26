@@ -19,6 +19,8 @@ This module is public API; changes to it are breaking changes.
         - bin_signal
         - to_stairs
         - gene_models
+        - logo_stacks
+        - position_totals
         - feature_rows
         - text_width_bp
         - widen

@@ -86,6 +86,44 @@ def example_motif_hits(n: int = 120) -> pd.DataFrame:
     })
 
 
+# (offset into the attribution window, motif, peak contribution)
+_ATTR_MOTIFS = [(212, "AGATAAG", 0.9), (461, "CCCCTGA", 1.4), (498, "CTTATCT", 0.7),
+                (530, "AGATAAG", 0.5), (760, "CCGCCCC", -0.6)]
+
+
+def example_attributions() -> pd.DataFrame:
+    """Hypothetical contribution scores over 1 kb at the strongest example peak.
+
+    Mimics the per-base output of a sequence model explained with DeepLIFT
+    or ISM: a value for every base at every position, near zero except at
+    a few planted motifs (GATA-like on both strands, an Msn2-like STRE, and
+    one repressive GC box with negative scores).
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``chrom``, ``start``, ``end`` (1 bp rows over
+        ``chr2:1,321,000-1,322,000``), ``ref`` (reference base) and one
+        column per base ``A``, ``C``, ``G``, ``T``.
+    """
+    start, length = 1_321_000, 1_000
+    rng = np.random.default_rng(3)
+    seq = rng.choice(list("ACGT"), length, p=[0.3, 0.2, 0.2, 0.3])
+    hyp = rng.normal(0, 0.015, (length, 4))
+    for off, motif, peak in _ATTR_MOTIFS:
+        shape = peak * (0.6 + 0.4 * rng.random(len(motif)))
+        for k, b in enumerate(motif):
+            j = "ACGT".index(b)
+            seq[off + k] = b
+            hyp[off + k] = -0.25 * shape[k] * rng.random(4)
+            hyp[off + k, j] = shape[k]
+    pos = start + np.arange(length)
+    out = pd.DataFrame({"chrom": "chr2", "start": pos, "end": pos + 1, "ref": seq})
+    for j, b in enumerate("ACGT"):
+        out[b] = hyp[:, j].round(4)
+    return out
+
+
 def example_gtf_path() -> Path:
     """Path of the bundled synthetic GTF (UCSC style, 1-based) for the example locus."""
     return Path(__file__).resolve().parent / "data" / "example.gtf"

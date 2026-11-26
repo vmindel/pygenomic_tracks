@@ -9,6 +9,7 @@ from ._coords import Region, as_region, select
 from ._pack import pack_rows
 from .annotations import annotation, cache_dir, cached, download, gene_region
 from .datasets import (
+    example_attributions,
     example_genes,
     example_gtf_path,
     example_motif_hits,
@@ -20,9 +21,10 @@ from .genes import genes
 from .intervals import intervals
 from .io import from_bigwig, read_bed, read_gtf
 from .layout import figure, format_genomic_axis
+from .logo import logo, logo_table
 from .signal import signal
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Region",
@@ -31,6 +33,7 @@ __all__ = [
     "cache_dir",
     "cached",
     "download",
+    "example_attributions",
     "example_genes",
     "example_gtf_path",
     "example_motif_hits",
@@ -44,6 +47,8 @@ __all__ = [
     "genes",
     "geometry",
     "intervals",
+    "logo",
+    "logo_table",
     "pack_rows",
     "read_bed",
     "read_gtf",

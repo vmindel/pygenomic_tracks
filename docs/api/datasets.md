@@ -13,6 +13,8 @@
 
 ::: pygenomic_tracks.example_motif_hits
 
+::: pygenomic_tracks.example_attributions
+
 ::: pygenomic_tracks.example_genes
 
 ::: pygenomic_tracks.example_gtf_path
