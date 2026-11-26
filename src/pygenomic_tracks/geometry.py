@@ -37,7 +37,9 @@ __all__ = [
     "feature_rows",
     "gene_models",
     "genomic_unit",
+    "logo_stacks",
     "pack_rows",
+    "position_totals",
     "select",
     "signal_steps",
     "text_width_bp",
@@ -331,6 +333,121 @@ def gene_models(
     )
     out["full"] = (out["feature"] == "CDS") | ~out["transcript"].isin(coding)
     return span, out
+
+
+# Logos
+
+
+def _logo_values(df, region, bases, cols):
+    region = as_region(region)
+    bases = list(bases)
+    check_columns(df, bases)
+    sub = select(df, region, cols)
+    starts, ends = clipped(sub, region, cols)
+    if len(starts) > 1 and bool(np.any(starts[1:] < ends[:-1])):
+        raise ValueError("logo rows overlap; each position must appear once")
+    values = np.nan_to_num(sub[bases].to_numpy(dtype=float), nan=0.0)
+    return starts, ends, values
+
+
+def logo_stacks(
+    df: pd.DataFrame,
+    region: RegionLike,
+    bases: Sequence[str] = ("A", "C", "G", "T"),
+    cols: Sequence[str] = DEFAULT_COLS,
+) -> pd.DataFrame:
+    """Letter boxes of a sequence logo within a region.
+
+    At each position the positive values are stacked upward from zero in
+    increasing order, so the largest is on top, and the negative values
+    downward with the largest magnitude at the bottom.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Rows with the ``cols`` columns and one numeric column per letter in
+        ``bases``; NaN counts as zero.
+    region : Region, str or tuple
+    bases : sequence of str
+        Columns to stack; each column name is the letter.
+    cols : tuple of str
+        Names of the chrom, start and end columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``start``, ``end`` (clipped to the region), ``base``, ``bottom`` and
+        ``top``, one row per non-zero letter, sorted by start and then from
+        zero outward. ``bottom`` is the end nearer zero, so ``top < bottom``
+        for letters below zero.
+
+    Raises
+    ------
+    KeyError
+        If a column is missing.
+    ValueError
+        If rows overlap.
+    """
+    starts, ends, values = _logo_values(df, region, bases, cols)
+    names = np.asarray(list(bases), dtype=object)
+    parts = []
+    for sign in (1.0, -1.0):
+        mag = np.where(sign * values > 0, np.abs(values), 0.0)
+        order = np.argsort(mag, axis=1, kind="stable")
+        m = np.take_along_axis(mag, order, axis=1)
+        top = sign * np.cumsum(m, axis=1)
+        bottom = top - sign * m
+        row = np.repeat(np.arange(len(starts)), len(names))
+        keep = m.ravel() > 0
+        parts.append(pd.DataFrame({
+            "_row": row[keep],
+            "_sign": -sign,
+            "start": starts[row[keep]],
+            "end": ends[row[keep]],
+            "base": names[order.ravel()[keep]],
+            "bottom": bottom.ravel()[keep],
+            "top": top.ravel()[keep],
+        }))
+    out = pd.concat(parts, ignore_index=True).sort_values(["_row", "_sign"], kind="stable")
+    return out.drop(columns=["_row", "_sign"]).reset_index(drop=True)
+
+
+def position_totals(
+    df: pd.DataFrame,
+    region: RegionLike,
+    bases: Sequence[str] = ("A", "C", "G", "T"),
+    cols: Sequence[str] = DEFAULT_COLS,
+) -> pd.DataFrame:
+    """Summed positive and negative logo values per position.
+
+    This is what a logo track draws when zoomed out too far for letters.
+
+    Parameters
+    ----------
+    df, region, bases, cols :
+        As in :func:`logo_stacks`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``start``, ``end`` (clipped to the region), ``pos`` (sum of positive
+        values, >= 0) and ``neg`` (sum of negative values, <= 0), one row
+        per position, sorted by start.
+
+    Raises
+    ------
+    KeyError
+        If a column is missing.
+    ValueError
+        If rows overlap.
+    """
+    starts, ends, values = _logo_values(df, region, bases, cols)
+    return pd.DataFrame({
+        "start": starts,
+        "end": ends,
+        "pos": np.where(values > 0, values, 0.0).sum(axis=1),
+        "neg": np.where(values < 0, values, 0.0).sum(axis=1),
+    })
 
 
 # Axis

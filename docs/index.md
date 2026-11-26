@@ -49,6 +49,7 @@ pygt.genes("mm10", axes[3], region, transcripts="longest")
 | [Quick start](tutorials/quickstart.md) | the data model and a first four-track figure |
 | [Signal tracks](tutorials/signal.md) | steps vs lines, binning, shared scales, overlays, ratios |
 | [Interval tracks](tutorials/intervals.md) | peaks, CREs, motif hits; colour, labels, strand, packing |
+| [Sequence logos](tutorials/logo.md) | contribution scores, ISM and PWMs as letters; arrays from a model |
 | [Genes and annotations](tutorials/genes.md) | GTFs, genome names, the download cache, clusters |
 | [Figure layout](tutorials/layout.md) | stacked tracks, highlights, panels, several loci, saving |
 | [With pymisha](tutorials/pymisha.md) | from track expressions to figures |

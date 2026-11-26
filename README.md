@@ -30,6 +30,7 @@ pygt.genes("mm10", axes[3], region, transcripts="longest")
 |---|---|
 | `pygt.signal` | numeric column as steps over real interval extents; gaps kept; aggregated to screen resolution (`max` by default); overlays share a scale |
 | `pygt.intervals` | any BED-like table; one colour by default, opt-in `color_by` (categorical or numeric), `label_by`, `strand`; short features kept visible |
+| `pygt.logo` | letters scaled by per-base values (contribution scores, ISM, PWMs); positives up, negatives down; bars when zoomed out too far for letters. `pygt.logo_table` places a model's `(L, 4)` or `(4, L)` array on the genome |
 | `pygt.genes` | transcript models from a DataFrame, a GTF path or a UCSC genome name (`"hg38"`, downloaded and cached on first use) |
 
 ## Other front-ends
